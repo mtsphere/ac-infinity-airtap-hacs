@@ -25,7 +25,10 @@ from .const import DEVICE_MODEL, DOMAIN
 from .coordinator import ACInfinityDataUpdateCoordinator
 from .models import ACInfinityData
 
+AUTO_MODE_WORK_TYPE = 3
 SPEED_RANGE = (1, 10)
+
+PRESET_AUTO_MODE = "Auto"
 
 
 async def async_setup_entry(
@@ -42,7 +45,13 @@ class ACInfinityFan(
 ):
 
     _attr_speed_count = int_states_in_range(SPEED_RANGE)
-    _attr_supported_features = FanEntityFeature.SET_SPEED
+    _attr_supported_features = (
+        FanEntityFeature.SET_SPEED
+        | FanEntityFeature.TURN_OFF
+        | FanEntityFeature.TURN_ON
+        | FanEntityFeature.PRESET_MODE
+    )
+    _attr_preset_modes = [PRESET_AUTO_MODE]
 
     def __init__(
         self,
@@ -77,13 +86,31 @@ class ACInfinityFan(
         preset_mode: str | None = None,
         **kwargs: Any,
     ) -> None:
+        if preset_mode is not None:
+            await self.async_set_preset_mode(preset_mode)
+            return
         speed = None
         if percentage is not None:
             speed = math.ceil(percentage_to_ranged_value(SPEED_RANGE, percentage))
+        self._attr_preset_mode = None
         await self._device.turn_on(speed)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self._device.turn_off()
+
+    async def async_set_preset_mode(self, preset_mode: str) -> None:
+        await self._device._ensure_connected()
+        if preset_mode == PRESET_AUTO_MODE:
+            self._attr_preset_mode = PRESET_AUTO_MODE
+            self._device.state.work_type = AUTO_MODE_WORK_TYPE
+
+            # NOTE(HACK): Should fold this into the ac-infinity-ble library
+            command = [16, 1, AUTO_MODE_WORK_TYPE]
+            if type in [7, 9, 11, 12]:
+                command += [255, 0]
+            command = self._device._protocol._add_head(command, 3, self._device.sequence)
+            await self._device._send_command(command)
+            await self._device._execute_disconnect()
 
     @callback
     def _async_update_attrs(self) -> None:
@@ -92,6 +119,8 @@ class ACInfinityFan(
         self._attr_percentage = ranged_value_to_percentage(
             SPEED_RANGE, self._device.state.fan
         )
+        self._attr_preset_mode = PRESET_AUTO_MODE if \
+            self._device.state.work_type == AUTO_MODE_WORK_TYPE else None
 
     @callback
     def _handle_coordinator_update(self, *args: Any) -> None:
