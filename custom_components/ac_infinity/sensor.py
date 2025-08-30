@@ -1,4 +1,3 @@
-"""The ac_infinity sensor platform."""
 from __future__ import annotations
 from typing import Any
 
@@ -30,7 +29,6 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the light platform for LEDBLE."""
     data: ACInfinityData = hass.data[DOMAIN][entry.entry_id]
     entities = [
         TemperatureSensor(data.coordinator, data.device, entry.title),
@@ -44,15 +42,12 @@ async def async_setup_entry(
 class ACInfinitySensor(
     PassiveBluetoothCoordinatorEntity[ACInfinityDataUpdateCoordinator], SensorEntity
 ):
-    """Representation of AC Infinity sensor."""
-
     def __init__(
         self,
         coordinator: ACInfinityDataUpdateCoordinator,
         device: ACInfinityController,
         name: str,
     ) -> None:
-        """Initialize an AC Infinity sensor."""
         super().__init__(coordinator)
         self._device = device
         self._name = name
@@ -95,7 +90,6 @@ class TemperatureSensor(ACInfinitySensor):
 
     @property
     def unique_id(self) -> str:
-        """Return a unique, Home Assistant friendly identifier for this entity."""
         return f"{self._device.address}_tmp"
 
     @callback
@@ -116,7 +110,6 @@ class HumiditySensor(ACInfinitySensor):
 
     @property
     def unique_id(self) -> str:
-        """Return a unique, Home Assistant friendly identifier for this entity."""
         return f"{self._device.address}_hum"
 
     @callback
@@ -136,7 +129,6 @@ class VpdSensor(ACInfinitySensor):
 
     @property
     def unique_id(self) -> str:
-        """Return a unique, Home Assistant friendly identifier for this entity."""
         return f"{self._device.address}_vpd"
 
     @callback

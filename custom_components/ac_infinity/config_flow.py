@@ -1,4 +1,3 @@
-"""Config flow for ac_infinity."""
 from __future__ import annotations
 
 import logging
@@ -24,12 +23,10 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for AC Infinity Bluetooth."""
 
     VERSION = 1
 
     def __init__(self) -> None:
-        """Initialize the config flow."""
         self._discovery_info: BluetoothServiceInfoBleak | None = None
         self._discovered_devices: dict[str, BluetoothServiceInfoBleak] = {}
 

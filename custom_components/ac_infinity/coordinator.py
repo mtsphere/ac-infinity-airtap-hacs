@@ -1,4 +1,3 @@
-"""AC Infinity Coordinator."""
 from __future__ import annotations
 
 import asyncio
@@ -20,7 +19,6 @@ DEVICE_STARTUP_TIMEOUT = 30
 
 
 class ACInfinityDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]):
-    """Class to manage fetching switchbot data."""
 
     def __init__(
         self,
@@ -29,7 +27,6 @@ class ACInfinityDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]
         ble_device: BLEDevice,
         controller: ACInfinityController,
     ) -> None:
-        """Initialize global switchbot data updater."""
         super().__init__(
             hass=hass,
             logger=logger,

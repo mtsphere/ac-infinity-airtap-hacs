@@ -1,4 +1,3 @@
-"""The ac_infinity fan platform."""
 from __future__ import annotations
 
 import math
@@ -34,7 +33,6 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the light platform for LEDBLE."""
     data: ACInfinityData = hass.data[DOMAIN][entry.entry_id]
     async_add_entities([ACInfinityFan(data.coordinator, data.device, entry.title)])
 
@@ -42,7 +40,6 @@ async def async_setup_entry(
 class ACInfinityFan(
     PassiveBluetoothCoordinatorEntity[ACInfinityDataUpdateCoordinator], FanEntity
 ):
-    """Representation of AC Infinity sensor."""
 
     _attr_speed_count = int_states_in_range(SPEED_RANGE)
     _attr_supported_features = FanEntityFeature.SET_SPEED
@@ -53,7 +50,6 @@ class ACInfinityFan(
         device: ACInfinityController,
         name: str,
     ) -> None:
-        """Initialize an AC Infinity sensor."""
         super().__init__(coordinator)
         self._device = device
         self._attr_name = f"{name} Fan"
@@ -81,14 +77,12 @@ class ACInfinityFan(
         preset_mode: str | None = None,
         **kwargs: Any,
     ) -> None:
-        """Turn on the fan."""
         speed = None
         if percentage is not None:
             speed = math.ceil(percentage_to_ranged_value(SPEED_RANGE, percentage))
         await self._device.turn_on(speed)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
-        """Turn off the fan."""
         await self._device.turn_off()
 
     @callback

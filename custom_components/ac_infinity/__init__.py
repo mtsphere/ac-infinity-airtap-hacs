@@ -1,4 +1,3 @@
-"""The ac_infinity integration."""
 from __future__ import annotations
 
 import logging
@@ -25,7 +24,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up ac_infinity from a config entry."""
     address: str = entry.data[CONF_ADDRESS]
     ble_device = bluetooth.async_ble_device_from_address(hass, address.upper(), True)
     if not ble_device:
