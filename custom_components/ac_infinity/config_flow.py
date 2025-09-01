@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from ac_infinity_ble import ACInfinityController, DeviceInfo
+from ac_infinity_ble import DeviceInfo
 from ac_infinity_ble.protocol import parse_manufacturer_data
 from ac_infinity_ble.const import MANUFACTURER_ID
 import voluptuous as vol
@@ -17,7 +17,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_SERVICE_DATA
 from homeassistant.data_entry_flow import FlowResult
 
 from .const import BLEAK_EXCEPTIONS, DOMAIN
-
+from .device import ACInfinityDevice
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 discovery_info.address, raise_on_progress=False
             )
             self._abort_if_unique_id_configured()
-            controller = ACInfinityController(
+            controller = ACInfinityDevice(
                 discovery_info.device, advertisement_data=discovery_info.advertisement
             )
             try:

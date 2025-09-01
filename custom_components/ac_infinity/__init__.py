@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from ac_infinity_ble import ACInfinityController, DeviceInfo
+from ac_infinity_ble import DeviceInfo
 
 from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntry
@@ -15,6 +15,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 
 from .const import DOMAIN
+from .device import ACInfinityDevice
 from .coordinator import ACInfinityDataUpdateCoordinator
 from .models import ACInfinityData
 
@@ -34,7 +35,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     device_info: DeviceInfo | dict = entry.data[CONF_SERVICE_DATA]
     if type(device_info) is dict:
         device_info = DeviceInfo(**entry.data[CONF_SERVICE_DATA])
-    controller = ACInfinityController(ble_device, device_info)
+    controller = ACInfinityDevice(ble_device, device_info)
     coordinator = ACInfinityDataUpdateCoordinator(hass, _LOGGER, ble_device, controller)
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = ACInfinityData(

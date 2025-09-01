@@ -3,8 +3,6 @@ from __future__ import annotations
 import math
 from typing import Any
 
-from ac_infinity_ble import ACInfinityController
-
 from homeassistant.components.fan import FanEntity, FanEntityFeature
 
 from homeassistant.components.bluetooth.passive_update_coordinator import (
@@ -22,10 +20,10 @@ from homeassistant.util.percentage import (
 )
 
 from .const import DEVICE_MODEL, DOMAIN, MANUFACTURER
+from .device import ACInfinityDevice, WORK_TYPE_AUTO
 from .coordinator import ACInfinityDataUpdateCoordinator
 from .models import ACInfinityData
 
-AUTO_MODE_WORK_TYPE = 3
 SPEED_RANGE = (1, 10)
 
 PRESET_AUTO_MODE = "Auto"
@@ -56,7 +54,7 @@ class ACInfinityFan(
     def __init__(
         self,
         coordinator: ACInfinityDataUpdateCoordinator,
-        device: ACInfinityController,
+        device: ACInfinityDevice,
         name: str,
     ) -> None:
         super().__init__(coordinator)
@@ -92,35 +90,29 @@ class ACInfinityFan(
         speed = None
         if percentage is not None:
             speed = math.ceil(percentage_to_ranged_value(SPEED_RANGE, percentage))
-        self._attr_preset_mode = None
         await self._device.turn_on(speed)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self._device.turn_off()
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
-        await self._device._ensure_connected()
         if preset_mode == PRESET_AUTO_MODE:
-            self._attr_preset_mode = PRESET_AUTO_MODE
-            self._device.state.work_type = AUTO_MODE_WORK_TYPE
-
-            # NOTE(HACK): Should fold this into the ac-infinity-ble library
-            command = [16, 1, AUTO_MODE_WORK_TYPE]
-            if type in [7, 9, 11, 12]:
-                command += [255, 0]
-            command = self._device._protocol._add_head(command, 3, self._device.sequence)
-            await self._device._send_command(command)
-            await self._device._execute_disconnect()
+            await self._device.set_mode_auto()
+        else:
+            raise ValueError(f"Unsupported preset mode: {preset_mode}")
 
     @callback
     def _async_update_attrs(self) -> None:
         """Handle updating _attr values."""
-        self._attr_is_on = self._device.is_on
+        if self._device.state.work_type == WORK_TYPE_AUTO:
+            self._attr_is_on = True
+            self._attr_preset_mode = PRESET_AUTO_MODE
+        else:
+            self._attr_is_on = self._device.is_on
+            self._attr_preset_mode = None
         self._attr_percentage = ranged_value_to_percentage(
             SPEED_RANGE, self._device.state.fan
         )
-        self._attr_preset_mode = PRESET_AUTO_MODE if \
-            self._device.state.work_type == AUTO_MODE_WORK_TYPE else None
 
     @callback
     def _handle_coordinator_update(self, *args: Any) -> None:

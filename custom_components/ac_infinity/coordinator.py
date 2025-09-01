@@ -8,10 +8,11 @@ import async_timeout
 from ac_infinity_ble.const import MANUFACTURER_ID
 from bleak.backends.device import BLEDevice
 from homeassistant.components import bluetooth
-from homeassistant.components.bluetooth.active_update_coordinator import (
-    ActiveBluetoothDataUpdateCoordinator,
-)
+from homeassistant.components.bluetooth.active_update_coordinator import \
+    ActiveBluetoothDataUpdateCoordinator
 from homeassistant.core import CoreState, HomeAssistant, callback
+
+from .device import ACInfinityDevice
 
 DEVICE_STARTUP_TIMEOUT = 30
 
@@ -23,7 +24,7 @@ class ACInfinityDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]
         hass: HomeAssistant,
         logger: logging.Logger,
         ble_device: BLEDevice,
-        controller: ACInfinityController,
+        controller: ACInfinityDevice,
     ) -> None:
         super().__init__(
             hass=hass,
@@ -46,7 +47,7 @@ class ACInfinityDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]
     ) -> bool:
         return (
             self.hass.state == CoreState.running
-            and (seconds_since_last_poll is None or seconds_since_last_poll > 30)
+            and self.controller.update_needed(seconds_since_last_poll)
             and bool(
                 bluetooth.async_ble_device_from_address(
                     self.hass, service_info.device.address, connectable=True
