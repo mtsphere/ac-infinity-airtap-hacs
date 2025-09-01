@@ -18,13 +18,34 @@ _LOGGER = logging.getLogger(ACInfinityController.__module__)
 _MIN_SECONDS_BETWEEN_POLLS = 30
 
 
+@dataclass
+class DeviceInfoEx(DeviceInfo):
+    @staticmethod
+    def create(device_info: DeviceInfo) -> DeviceInfoEx:
+        return DeviceInfoEx(**device_info.__dict__)
+
+    auto_mode: Optional[AutoModeConfig] = None
+
+
+@dataclass
+class AutoModeConfig:
+    high_temp_enabled: bool
+    high_temp: int
+    low_temp_enabled: bool
+    low_temp: int
+    high_humidity_enabled: bool
+    high_humidity: int
+    low_humidity_enabled: bool
+    low_humidity: int
+
+
 class ACInfinityDevice(ACInfinityController):
     _config_changed_since_last_update = False
 
     def __init__(
         self,
         ble_device: BLEDevice,
-        state: DeviceInfo | None = None,
+        state: DeviceInfoEx | None = None,
         advertisement_data: AdvertisementData | None = None,
     ):
         super().__init__(
@@ -32,6 +53,17 @@ class ACInfinityDevice(ACInfinityController):
             state=state,
             advertisement_data=advertisement_data,
         )
+
+        if self._state is DeviceInfo:
+            self._state = DeviceInfoEx(**self._state.__dict__)
+
+    @property
+    def auto_mode(self) -> Optional[AutoModeConfig]:
+        return self._state.auto_mode
+
+    @property
+    def state(self) -> DeviceInfoEx:
+        return self._state
 
     def update_needed(self, seconds_since_last_update: Optional[float | int]) -> bool:
         return (self._config_changed_since_last_update or
@@ -55,6 +87,17 @@ class ACInfinityDevice(ACInfinityController):
                     self.state.work_type = data[12]
                     self.state.level_off = data[15]
                     self.state.level_on = data[18]
+
+                    self.state.auto_mode = AutoModeConfig(
+                        high_temp_enabled=not get_bit(data[21], 4),
+                        low_temp_enabled=not get_bit(data[21], 5),
+                        high_humidity_enabled=not get_bit(data[21], 6),
+                        low_humidity_enabled=not get_bit(data[21], 7),
+                        high_temp=data[23],
+                        low_temp=data[25],
+                        high_humidity=data[26],
+                        low_humidity=data[27],
+                    )
 
                     if self.state.work_type == WORK_TYPE_OFF:
                         self.state.fan = self.state.level_off

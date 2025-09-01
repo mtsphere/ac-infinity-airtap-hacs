@@ -3,20 +3,15 @@ from __future__ import annotations
 import logging
 
 from ac_infinity_ble import DeviceInfo
-
 from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (
-    CONF_ADDRESS,
-    CONF_SERVICE_DATA,
-    Platform,
-)
+from homeassistant.const import CONF_ADDRESS, CONF_SERVICE_DATA, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 
 from .const import DOMAIN
-from .device import ACInfinityDevice
 from .coordinator import ACInfinityDataUpdateCoordinator
+from .device import ACInfinityDevice, DeviceInfoEx
 from .models import ACInfinityData
 
 PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.FAN]
@@ -32,14 +27,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             f"Could not find AC Infinity device with address {address}"
         )
 
-    device_info: DeviceInfo | dict = entry.data[CONF_SERVICE_DATA]
-    if type(device_info) is dict:
-        device_info = DeviceInfo(**entry.data[CONF_SERVICE_DATA])
-    controller = ACInfinityDevice(ble_device, device_info)
-    coordinator = ACInfinityDataUpdateCoordinator(hass, _LOGGER, ble_device, controller)
+    service_data = entry.data[CONF_SERVICE_DATA]
+    if type(service_data) is dict:
+        device_info = DeviceInfoEx(**service_data)
+    elif type(service_data) is DeviceInfoEx:
+        device_info = service_data
+    elif type(service_data) is DeviceInfo:
+        device_info = DeviceInfoEx.create(service_data)
+    else:
+        raise ValueError(
+            f"Unexpected config entry service data type: {type(service_data)}"
+        )
+
+    device = ACInfinityDevice(ble_device, device_info)
+    coordinator = ACInfinityDataUpdateCoordinator(hass, _LOGGER, ble_device, device)
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = ACInfinityData(
-        entry.title, controller, coordinator
+        entry.title, device, coordinator
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
