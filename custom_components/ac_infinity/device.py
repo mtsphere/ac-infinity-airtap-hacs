@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import logging
 from dataclasses import dataclass
 from typing import Optional
@@ -123,6 +124,79 @@ class ACInfinityDevice(ACInfinityController):
             await self._send_command(command)
 
             self.state.work_type = WORK_TYPE_AUTO
+            self._config_changed_since_last_update = True
+        finally:
+            await self._execute_disconnect()
+
+    async def async_set_auto_high_temp(self, value: float) -> None:
+        if self.auto_mode is None:
+            raise ValueError("Auto mode configuration is not loaded; cannot change configuration values")
+
+        new_config = dataclasses.replace(self.auto_mode, high_temp=round(value))
+        await self.async_set_auto_mode_config(new_config)
+
+    async def async_set_auto_low_temp(self, value: float) -> None:
+        if self.auto_mode is None:
+            raise ValueError("Auto mode configuration is not loaded; cannot change configuration values")
+
+        new_config = dataclasses.replace(self.auto_mode, low_temp=round(value))
+        await self.async_set_auto_mode_config(new_config)
+
+    async def async_set_auto_mode_high_temp_enabled(self, enabled: bool) -> None:
+        if self.auto_mode is None:
+            raise ValueError("Auto mode configuration is not loaded; cannot change configuration values")
+
+        new_config = dataclasses.replace(self.auto_mode, high_temp_enabled=enabled)
+        await self.async_set_auto_mode_config(new_config)
+
+    async def async_set_auto_mode_low_temp_enabled(self, enabled: bool) -> None:
+        if self.auto_mode is None:
+            raise ValueError("Auto mode configuration is not loaded; cannot change configuration values")
+
+        new_config = dataclasses.replace(self.auto_mode, low_temp_enabled=enabled)
+        await self.async_set_auto_mode_config(new_config)
+
+    async def async_set_auto_mode_config(self, config: AutoModeConfig) -> None:
+        if config is None:
+            raise ValueError("config cannot be None")
+        _LOGGER.debug("%s: Setting auto mode config to %s", self.name, config)
+
+        def byte_for_temp_hum_enabled_switches(config: AutoModeConfig) -> int:
+            b = 8 if config.high_temp_enabled else 0
+            if config.low_temp_enabled:
+                b |= 4
+            if config.high_humidity_enabled:
+                b |= 2
+            if config.low_humidity_enabled:
+                b |= 1
+            return b
+
+        def c_to_f(celsius: float) -> float:
+            return round((celsius * 9.0 / 5.0) + 32.0, 2)
+
+        temp_hum_enabled_switches = byte_for_temp_hum_enabled_switches(config)
+        # Note: Logic does not differ based on value of is_degree, as that is a display flag only.
+        # The protocol has both Celsius and Fahrenheit values; our data model uses Celsius only.
+        high_temp_f = round(c_to_f(config.high_temp))
+        high_temp_c = config.high_temp
+        low_temp_f = round(c_to_f(config.low_temp))
+        low_temp_c = config.low_temp
+
+        command = [19, 7,
+                   temp_hum_enabled_switches,
+                   high_temp_f, high_temp_c,
+                   low_temp_f, low_temp_c,
+                   config.high_humidity,
+                   config.low_humidity]
+        if self.state.type in [7, 9, 11, 12]:
+            command += [255, 0]
+        command = self._protocol._add_head(command, 3, self.sequence)
+
+        await self._ensure_connected()
+        try:
+            await self._send_command(command)
+
+            self.state.auto_mode = config
             self._config_changed_since_last_update = True
         finally:
             await self._execute_disconnect()
