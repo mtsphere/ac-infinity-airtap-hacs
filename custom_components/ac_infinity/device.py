@@ -78,5 +78,8 @@ class ACInfinityDevice(ACInfinityController):
         await self._ensure_connected()
         try:
             await self._send_command(command)
+
+            self.state.work_type = WORK_TYPE_AUTO
+            self._config_changed_since_last_update = True
         finally:
             await self._execute_disconnect()
