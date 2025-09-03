@@ -5,7 +5,7 @@ import contextlib
 import logging
 
 import async_timeout
-from ac_infinity_ble import ACInfinityController
+from ac_infinity_ble.const import MANUFACTURER_ID
 from bleak.backends.device import BLEDevice
 from homeassistant.components import bluetooth
 from homeassistant.components.bluetooth.active_update_coordinator import (
@@ -75,6 +75,8 @@ class ACInfinityDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]
                           self.ble_device.name,
                           self.ble_device.address,
                           service_info.advertisement)
+        if MANUFACTURER_ID not in service_info.advertisement.manufacturer_data:
+            return
         self.ble_device = service_info.device
         self.controller.set_ble_device_and_advertisement_data(
             service_info.device, service_info.advertisement
