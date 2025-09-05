@@ -19,7 +19,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DEVICE_MODEL, DOMAIN
+from .const import DEVICE_MODEL, DOMAIN, MANUFACTURER
 from .coordinator import ACInfinityDataUpdateCoordinator
 from .models import ACInfinityData
 
@@ -55,7 +55,7 @@ class ACInfinitySensor(
         self._attr_device_info = DeviceInfo(
             name=device.name,
             model=DEVICE_MODEL[device.state.type],
-            manufacturer="AC Infinity",
+            manufacturer=MANUFACTURER,
             sw_version=device.state.version,
             connections={(dr.CONNECTION_BLUETOOTH, device.address)},
         )

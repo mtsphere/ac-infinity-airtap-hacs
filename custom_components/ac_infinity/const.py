@@ -2,6 +2,8 @@ from bleak.exc import BleakError
 
 DOMAIN = "ac_infinity"
 
+MANUFACTURER = "AC Infinity"
+
 DEVICE_TIMEOUT = 30
 UPDATE_SECONDS = 15
 

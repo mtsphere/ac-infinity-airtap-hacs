@@ -21,7 +21,7 @@ from homeassistant.util.percentage import (
     percentage_to_ranged_value,
 )
 
-from .const import DEVICE_MODEL, DOMAIN
+from .const import DEVICE_MODEL, DOMAIN, MANUFACTURER
 from .coordinator import ACInfinityDataUpdateCoordinator
 from .models import ACInfinityData
 
@@ -66,7 +66,7 @@ class ACInfinityFan(
         self._attr_device_info = DeviceInfo(
             name=device.name,
             model=DEVICE_MODEL[device.state.type],
-            manufacturer="AC Infinity",
+            manufacturer=MANUFACTURER,
             sw_version=device.state.version,
             connections={(dr.CONNECTION_BLUETOOTH, device.address)},
         )
