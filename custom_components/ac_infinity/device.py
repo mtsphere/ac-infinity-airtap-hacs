@@ -6,7 +6,8 @@ from dataclasses import dataclass
 from typing import Optional
 
 from ac_infinity_ble import ACInfinityController, DeviceInfo
-from ac_infinity_ble.const import CallbackType
+from ac_infinity_ble.const import CallbackType, MANUFACTURER_ID
+from ac_infinity_ble.protocol import parse_manufacturer_data
 from ac_infinity_ble.util import get_bit
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
@@ -58,6 +59,19 @@ class ACInfinityDevice(ACInfinityController):
         if self._state is DeviceInfo:
             self._state = DeviceInfoEx(**self._state.__dict__)
 
+    def set_ble_device_and_advertisement_data(
+        self, ble_device: BLEDevice, advertisement_data: AdvertisementData
+    ) -> None:
+        self._ble_device = ble_device
+        self._advertisement_data = advertisement_data
+        info = parse_manufacturer_data(
+            advertisement_data.manufacturer_data[MANUFACTURER_ID]
+        )
+        self._state = dataclasses.replace(
+            self._state, **{k: v for k, v in dataclasses.asdict(info).items() if v is not None}
+        )
+        self._fire_callbacks(CallbackType.ADVERTISEMENT)
+
     @property
     def auto_mode(self) -> Optional[AutoModeConfig]:
         return self._state.auto_mode
@@ -99,11 +113,6 @@ class ACInfinityDevice(ACInfinityController):
                         high_humidity=data[26],
                         low_humidity=data[27],
                     )
-
-                    if self.state.work_type == WORK_TYPE_OFF:
-                        self.state.fan = self.state.level_off
-                    if self.state.work_type == WORK_TYPE_ON:
-                        self.state.fan = self.state.level_on
 
                     self._config_changed_since_last_update = False
                     self._fire_callbacks(CallbackType.UPDATE_RESPONSE)
