@@ -77,6 +77,14 @@ class ACInfinityDevice(ACInfinityController):
         return self._state.auto_mode
 
     @property
+    def min_speed(self) -> Optional[int]:
+        return self._state.level_off
+
+    @property
+    def max_speed(self) -> Optional[int]:
+        return self._state.level_on
+
+    @property
     def state(self) -> DeviceInfoEx:
         return self._state
 
@@ -206,6 +214,48 @@ class ACInfinityDevice(ACInfinityController):
             await self._send_command(command)
 
             self.state.auto_mode = config
+            self._config_changed_since_last_update = True
+        finally:
+            await self._execute_disconnect()
+
+    async def async_set_min_speed(self, value: int) -> None:
+        """Set the minimum fan speed for auto and other dynamic modes."""
+        if value not in range(0, 11):
+            raise ValueError("value must be between 0 and 10")
+
+        _LOGGER.debug("%s: Setting min speed to %s", self.name, value)
+
+        command = [17, 1, value]
+        if self.state.type in [7, 9, 11, 12]:
+            command += [255, 0]
+        command = self._protocol._add_head(command, 3, self.sequence)
+
+        await self._ensure_connected()
+        try:
+            await self._send_command(command)
+
+            self.state.level_off = value
+            self._config_changed_since_last_update = True
+        finally:
+            await self._execute_disconnect()
+
+    async def async_set_max_speed(self, value: int) -> None:
+        """Set the maximum fan speed for auto and other dynamic modes."""
+        if value not in range(0, 11):
+            raise ValueError("value must be between 0 and 10")
+
+        _LOGGER.debug("%s: Setting max speed to %s", self.name, value)
+
+        command = [18, 1, value]
+        if self.state.type in [7, 9, 11, 12]:
+            command += [255, 0]
+        command = self._protocol._add_head(command, 3, self.sequence)
+
+        await self._ensure_connected()
+        try:
+            await self._send_command(command)
+
+            self.state.level_off = value
             self._config_changed_since_last_update = True
         finally:
             await self._execute_disconnect()
