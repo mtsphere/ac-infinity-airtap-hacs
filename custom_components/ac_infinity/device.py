@@ -12,6 +12,8 @@ from ac_infinity_ble.util import get_bit
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 
+from .const import FAMILY_E_MODELS
+
 WORK_TYPE_OFF = 1
 WORK_TYPE_ON = 2
 WORK_TYPE_AUTO = 3
@@ -133,7 +135,7 @@ class ACInfinityDevice(ACInfinityController):
         _LOGGER.debug("%s: Setting mode to auto", self.name)
 
         command = [16, 1, WORK_TYPE_AUTO]
-        if self.state.type in [7, 9, 11, 12]:
+        if self.state.type in FAMILY_E_MODELS:
             command += [255, 0]
         command = self._protocol._add_head(command, 3, self.sequence)
         await self._ensure_connected()
@@ -205,7 +207,7 @@ class ACInfinityDevice(ACInfinityController):
                    low_temp_f, low_temp_c,
                    config.high_humidity,
                    config.low_humidity]
-        if self.state.type in [7, 9, 11, 12]:
+        if self.state.type in FAMILY_E_MODELS:
             command += [255, 0]
         command = self._protocol._add_head(command, 3, self.sequence)
 
@@ -226,7 +228,7 @@ class ACInfinityDevice(ACInfinityController):
         _LOGGER.debug("%s: Setting min speed to %s", self.name, value)
 
         command = [17, 1, value]
-        if self.state.type in [7, 9, 11, 12]:
+        if self.state.type in FAMILY_E_MODELS:
             command += [255, 0]
         command = self._protocol._add_head(command, 3, self.sequence)
 
@@ -247,7 +249,7 @@ class ACInfinityDevice(ACInfinityController):
         _LOGGER.debug("%s: Setting max speed to %s", self.name, value)
 
         command = [18, 1, value]
-        if self.state.type in [7, 9, 11, 12]:
+        if self.state.type in FAMILY_E_MODELS:
             command += [255, 0]
         command = self._protocol._add_head(command, 3, self.sequence)
 

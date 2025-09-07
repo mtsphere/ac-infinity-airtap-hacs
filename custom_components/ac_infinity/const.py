@@ -13,3 +13,5 @@ DEVICE_MODEL = {1: "Controller 67",
                 6: "Airtap Series",
                 7: "Controller 69",
                 11: "Controller 69 Pro"}
+
+FAMILY_E_MODELS = {7, 9, 11, 12}

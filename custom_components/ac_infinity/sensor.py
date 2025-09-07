@@ -12,7 +12,7 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import slugify
 
-from .const import DEVICE_MODEL, DOMAIN, MANUFACTURER
+from .const import DEVICE_MODEL, DOMAIN, FAMILY_E_MODELS, MANUFACTURER
 from .coordinator import ACInfinityDataUpdateCoordinator
 from .device import ACInfinityDevice
 from .models import ACInfinityData
@@ -29,7 +29,7 @@ async def async_setup_entry(
     if data.device.state.type not in [6]:  # Airtap does not have humidity
         entities.append(HumiditySensor(data.coordinator, data.device, "Humidity"))
 
-    if data.device.state.version >= 3 and data.device.state.type in [7, 9, 11, 12]:
+    if data.device.state.version >= 3 and data.device.state.type in FAMILY_E_MODELS:
         entities.append(VpdSensor(data.coordinator, data.device, "VPD"))
     async_add_entities(entities)
 
