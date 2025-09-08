@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from homeassistant.components.bluetooth.passive_update_coordinator import \
     PassiveBluetoothCoordinatorEntity
 from homeassistant.components.sensor import (SensorDeviceClass, SensorEntity,
@@ -65,17 +63,10 @@ class ACInfinitySensor(
         raise NotImplementedError("Not yet implemented.")
 
     @callback
-    def _handle_coordinator_update(self, *args: Any) -> None:
-        """Handle data update."""
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
         self._update_attrs()
-        self.async_write_ha_state()
-
-    async def async_added_to_hass(self) -> None:
-        """Register callbacks."""
-        self.async_on_remove(
-            self._device.register_callback(self._handle_coordinator_update)
-        )
-        return await super().async_added_to_hass()
+        super()._handle_coordinator_update()
 
 
 class TemperatureSensor(ACInfinitySensor):
