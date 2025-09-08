@@ -1,23 +1,19 @@
 from __future__ import annotations
+
 from typing import Any
 
 from ac_infinity_ble import ACInfinityController
-
-from homeassistant.components.sensor import (
-    SensorDeviceClass,
-    SensorEntity,
-    SensorStateClass,
-)
-
-from homeassistant.components.bluetooth.passive_update_coordinator import (
-    PassiveBluetoothCoordinatorEntity,
-)
+from homeassistant.components.bluetooth.passive_update_coordinator import \
+    PassiveBluetoothCoordinatorEntity
+from homeassistant.components.sensor import (SensorDeviceClass, SensorEntity,
+                                             SensorStateClass)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PERCENTAGE, UnitOfPressure, UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.util import slugify
 
 from .const import DEVICE_MODEL, DOMAIN, MANUFACTURER
 from .coordinator import ACInfinityDataUpdateCoordinator
@@ -30,19 +26,21 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     data: ACInfinityData = hass.data[DOMAIN][entry.entry_id]
-    entities = [TemperatureSensor(data.coordinator, data.device, entry.title)]
+    entities = [TemperatureSensor(data.coordinator, data.device, "Temperature")]
 
     if data.device.state.type not in [6]:  # Airtap does not have humidity
-        entities.append(HumiditySensor(data.coordinator, data.device, entry.title))
+        entities.append(HumiditySensor(data.coordinator, data.device, "Humidity"))
 
     if data.device.state.version >= 3 and data.device.state.type in [7, 9, 11, 12]:
-        entities.append(VpdSensor(data.coordinator, data.device, entry.title))
+        entities.append(VpdSensor(data.coordinator, data.device, "VPD"))
     async_add_entities(entities)
 
 
 class ACInfinitySensor(
     PassiveBluetoothCoordinatorEntity[ACInfinityDataUpdateCoordinator], SensorEntity
 ):
+    _attr_has_entity_name = True
+
     def __init__(
         self,
         coordinator: ACInfinityDataUpdateCoordinator,
@@ -52,6 +50,7 @@ class ACInfinitySensor(
         super().__init__(coordinator)
         self._device = device
         self._name = name
+        self._attr_unique_id = f"{self._device.address}_{slugify(name)}"
         self._attr_device_info = DeviceInfo(
             name=device.name,
             model=DEVICE_MODEL[device.state.type],
@@ -59,17 +58,16 @@ class ACInfinitySensor(
             sw_version=device.state.version,
             connections={(dr.CONNECTION_BLUETOOTH, device.address)},
         )
-        self._async_update_attrs()
 
     @callback
-    def _async_update_attrs(self) -> None:
+    def _update_attrs(self) -> None:
         """Handle updating _attr values."""
         raise NotImplementedError("Not yet implemented.")
 
     @callback
     def _handle_coordinator_update(self, *args: Any) -> None:
         """Handle data update."""
-        self._async_update_attrs()
+        self._update_attrs()
         self.async_write_ha_state()
 
     async def async_added_to_hass(self) -> None:
@@ -85,36 +83,19 @@ class TemperatureSensor(ACInfinitySensor):
     _attr_device_class = SensorDeviceClass.TEMPERATURE
     _attr_state_class = SensorStateClass.MEASUREMENT
 
-    @property
-    def name(self) -> str:
-        return f"{self._name} Temperature"
-
-    @property
-    def unique_id(self) -> str:
-        return f"{self._device.address}_tmp"
-
     @callback
-    def _async_update_attrs(self) -> None:
+    def _update_attrs(self) -> None:
         """Handle updating _attr values."""
         self._attr_native_value = self._device.temperature
 
 
 class HumiditySensor(ACInfinitySensor):
-    _attr_name = "Humidity"
     _attr_native_unit_of_measurement = PERCENTAGE
     _attr_device_class = SensorDeviceClass.HUMIDITY
     _attr_state_class = SensorStateClass.MEASUREMENT
 
-    @property
-    def name(self) -> str:
-        return f"{self._name} Humidity"
-
-    @property
-    def unique_id(self) -> str:
-        return f"{self._device.address}_hum"
-
     @callback
-    def _async_update_attrs(self) -> None:
+    def _update_attrs(self) -> None:
         """Handle updating _attr values."""
         self._attr_native_value = self._device.humidity
 
@@ -124,15 +105,7 @@ class VpdSensor(ACInfinitySensor):
     _attr_device_class = SensorDeviceClass.ATMOSPHERIC_PRESSURE
     _attr_state_class = SensorStateClass.MEASUREMENT
 
-    @property
-    def name(self) -> str:
-        return f"{self._name} VPD"
-
-    @property
-    def unique_id(self) -> str:
-        return f"{self._device.address}_vpd"
-
     @callback
-    def _async_update_attrs(self) -> None:
+    def _update_attrs(self) -> None:
         """Handle updating _attr values."""
         self._attr_native_value = self._device.vpd
