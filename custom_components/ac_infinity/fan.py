@@ -9,6 +9,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.util import slugify
 from homeassistant.util.percentage import (int_states_in_range,
                                            percentage_to_ranged_value,
                                            ranged_value_to_percentage)
@@ -30,12 +31,13 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     data: ACInfinityData = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([ACInfinityFan(data.coordinator, data.device, entry.title)])
+    async_add_entities([ACInfinityFan(data.coordinator, data.device, "Fan")])
 
 
 class ACInfinityFan(
     ActiveBluetoothCoordinatorEntity[ACInfinityDataUpdateCoordinator], FanEntity
 ):
+    _attr_has_entity_name = True
     _attr_speed_count = int_states_in_range(SPEED_RANGE)
     _attr_supported_features = (
         FanEntityFeature.SET_SPEED
@@ -53,8 +55,8 @@ class ACInfinityFan(
     ) -> None:
         super().__init__(coordinator)
         self._device = device
-        self._attr_name = f"{name} Fan"
-        self._attr_unique_id = f"{self._device.address}_fan"
+        self._attr_name = name
+        self._attr_unique_id = f"{self._device.address}_{slugify(name)}"
         self._attr_device_info = DeviceInfo(
             name=device.name,
             model=DEVICE_MODEL[device.state.type],
