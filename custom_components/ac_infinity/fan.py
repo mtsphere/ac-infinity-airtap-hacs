@@ -4,24 +4,19 @@ import math
 from typing import Any
 
 from homeassistant.components.fan import FanEntity, FanEntityFeature
-
-from homeassistant.components.bluetooth.passive_update_coordinator import (
-    PassiveBluetoothCoordinatorEntity,
-)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.util.percentage import (
-    int_states_in_range,
-    ranged_value_to_percentage,
-    percentage_to_ranged_value,
-)
+from homeassistant.util.percentage import (int_states_in_range,
+                                           percentage_to_ranged_value,
+                                           ranged_value_to_percentage)
 
 from .const import DEVICE_MODEL, DOMAIN, MANUFACTURER
-from .device import ACInfinityDevice, WORK_TYPE_AUTO
-from .coordinator import ACInfinityDataUpdateCoordinator
+from .coordinator import (ACInfinityDataUpdateCoordinator,
+                          ActiveBluetoothCoordinatorEntity)
+from .device import WORK_TYPE_AUTO, ACInfinityDevice
 from .models import ACInfinityData
 
 SPEED_RANGE = (1, 10)
@@ -39,9 +34,8 @@ async def async_setup_entry(
 
 
 class ACInfinityFan(
-    PassiveBluetoothCoordinatorEntity[ACInfinityDataUpdateCoordinator], FanEntity
+    ActiveBluetoothCoordinatorEntity[ACInfinityDataUpdateCoordinator], FanEntity
 ):
-
     _attr_speed_count = int_states_in_range(SPEED_RANGE)
     _attr_supported_features = (
         FanEntityFeature.SET_SPEED
@@ -68,7 +62,6 @@ class ACInfinityFan(
             sw_version=device.state.version,
             connections={(dr.CONNECTION_BLUETOOTH, device.address)},
         )
-        self._async_update_attrs()
 
     async def async_set_percentage(self, percentage: int) -> None:
         """Set the speed of the fan, as a percentage."""
@@ -102,7 +95,7 @@ class ACInfinityFan(
             raise ValueError(f"Unsupported preset mode: {preset_mode}")
 
     @callback
-    def _async_update_attrs(self) -> None:
+    def _update_attrs(self) -> None:
         """Handle updating _attr values."""
         if self._device.state.work_type == WORK_TYPE_AUTO:
             self._attr_is_on = True
@@ -117,7 +110,7 @@ class ACInfinityFan(
     @callback
     def _handle_coordinator_update(self, *args: Any) -> None:
         """Handle data update."""
-        self._async_update_attrs()
+        self._update_attrs()
         self.async_write_ha_state()
 
     async def async_added_to_hass(self) -> None:

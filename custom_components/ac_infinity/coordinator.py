@@ -10,6 +10,9 @@ from bleak.backends.device import BLEDevice
 from homeassistant.components import bluetooth
 from homeassistant.components.bluetooth.active_update_coordinator import \
     ActiveBluetoothDataUpdateCoordinator
+from homeassistant.helpers.update_coordinator import (
+    BaseCoordinatorEntity
+)
 from homeassistant.core import CoreState, HomeAssistant, callback
 
 from .device import ACInfinityDevice
@@ -97,3 +100,20 @@ class ACInfinityDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]
                 await self._device_ready.wait()
                 return True
         return False
+
+
+class ActiveBluetoothCoordinatorEntity[
+    _ActiveBluetoothDataUpdateCoordinatorT: ActiveBluetoothDataUpdateCoordinator = ActiveBluetoothDataUpdateCoordinator
+](
+    BaseCoordinatorEntity[_ActiveBluetoothDataUpdateCoordinatorT]
+):
+    """A class for entities using an ActiveBluetoothDataUpdateCoordinator and whose availability should include
+    whether the last Bluetooth poll was successful."""
+
+    async def async_update(self) -> None:
+        """Only allow updates via the coordinator, not on demand."""
+
+    @property
+    def available(self) -> bool:
+        """Return if entity is available."""
+        return self.coordinator.available and self.coordinator.last_poll_successful
