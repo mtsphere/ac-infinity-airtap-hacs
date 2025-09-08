@@ -4,16 +4,14 @@ import asyncio
 import contextlib
 import logging
 
-from ac_infinity_ble import ACInfinityController
 import async_timeout
+from ac_infinity_ble import ACInfinityController
 from bleak.backends.device import BLEDevice
-
 from homeassistant.components import bluetooth
 from homeassistant.components.bluetooth.active_update_coordinator import (
     ActiveBluetoothDataUpdateCoordinator,
 )
 from homeassistant.core import CoreState, HomeAssistant, callback
-
 
 DEVICE_STARTUP_TIMEOUT = 30
 
@@ -61,6 +59,10 @@ class ACInfinityDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]
     ) -> None:
         """Poll the device."""
         await self.controller.update()
+        self.logger.debug("%s (%s) state after poll: %s",
+                          self.ble_device.name,
+                          self.ble_device.address,
+                          self.controller.state)
 
     @callback
     def _async_handle_bluetooth_event(
@@ -69,15 +71,20 @@ class ACInfinityDataUpdateCoordinator(ActiveBluetoothDataUpdateCoordinator[None]
         change: bluetooth.BluetoothChange,
     ) -> None:
         """Handle a Bluetooth event."""
+        self.logger.debug("%s (%s) received: %s",
+                          self.ble_device.name,
+                          self.ble_device.address,
+                          service_info.advertisement)
         self.ble_device = service_info.device
         self.controller.set_ble_device_and_advertisement_data(
             service_info.device, service_info.advertisement
         )
         if self.controller.name:
             self._device_ready.set()
-        self.logger.debug(
-            "%s: AC Infinity data: %s", self.ble_device.address, self.controller.state
-        )
+        self.logger.debug("%s (%s) state after advertisement: %s",
+                          self.ble_device.name,
+                          self.ble_device.address,
+                          self.controller.state)
         super()._async_handle_bluetooth_event(service_info, change)
 
     async def async_wait_ready(self) -> bool:
