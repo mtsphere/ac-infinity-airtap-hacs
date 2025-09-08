@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from ac_infinity_ble import ACInfinityController
 from homeassistant.components.bluetooth.passive_update_coordinator import \
     PassiveBluetoothCoordinatorEntity
 from homeassistant.components.sensor import (SensorDeviceClass, SensorEntity,
@@ -17,6 +16,7 @@ from homeassistant.util import slugify
 
 from .const import DEVICE_MODEL, DOMAIN, MANUFACTURER
 from .coordinator import ACInfinityDataUpdateCoordinator
+from .device import ACInfinityDevice
 from .models import ACInfinityData
 
 
@@ -44,7 +44,7 @@ class ACInfinitySensor(
     def __init__(
         self,
         coordinator: ACInfinityDataUpdateCoordinator,
-        device: ACInfinityController,
+        device: ACInfinityDevice,
         name: str,
     ) -> None:
         super().__init__(coordinator)
