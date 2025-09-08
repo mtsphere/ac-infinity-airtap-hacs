@@ -75,6 +75,26 @@ class ACInfinityDevice(ACInfinityController):
         self._fire_callbacks(CallbackType.ADVERTISEMENT)
 
     @property
+    def speed(self) -> Optional[int]:
+        """Get the speed of the device."""
+        return self._state.fan
+
+    @property
+    def temperature(self) -> Optional[float]:
+        """Get the temperature of the device."""
+        return self._state.tmp
+
+    @property
+    def humidity(self) -> Optional[float]:
+        """Get the humidity of the device."""
+        return self._state.hum
+
+    @property
+    def vpd(self) -> Optional[float]:
+        """Get the vpd of the device."""
+        return self._state.vpd
+
+    @property
     def auto_mode(self) -> Optional[AutoModeConfig]:
         return self._state.auto_mode
 
