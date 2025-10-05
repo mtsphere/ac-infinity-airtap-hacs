@@ -98,6 +98,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if not self._discovered_devices:
             return self.async_abort(reason="no_devices_found")
 
+        _LOGGER.debug("Discovered devices: %s", self._discovered_devices)
+
         devices = {}
         for service_info in self._discovered_devices.values():
             device = parse_manufacturer_data(
