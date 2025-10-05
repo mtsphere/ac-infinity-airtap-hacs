@@ -4,6 +4,20 @@ Home Assistant custom integration for Bluetooth Low Energy (BLE) control of [AC 
 
 Uses [ac-infinity-ble](https://github.com/hunterjm/ac-infinity-ble/) library.
 
-### Credit
+## Troubleshooting
+
+### Debug Logging
+
+To enbale debug logging, configure the your [loggers](https://www.home-assistant.io/integrations/logger/) as follows:
+
+```yaml
+logger:
+  default: info
+  logs:
+    ac_infinity_ble: debug
+    custom_components.ac_infinity: debug
+```
+
+## Credit
 
 This project builds on work by Jason Hunter: [hunterjm/ac-infinity-hacs](https://github.com/hunterjm/ac-infinity-hacs).
